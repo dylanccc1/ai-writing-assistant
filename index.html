@@ -35,7 +35,6 @@
             <option value="gemma2-9b-it">Gemma 2 9B</option>
             <option value="qwen2.5-72b">Qwen2.5 72B（中文强）</option>
         </select>
-
         <select id="mode">
             <option value="article">📝 生成完整文章</option>
             <option value="title">🏷️ 生成标题</option>
@@ -43,27 +42,22 @@
             <option value="rewrite">✍️ 改写润色</option>
             <option value="continue">🔄 续写</option>
         </select>
-
         <div style="position:relative;">
             <textarea id="prompt" rows="6" placeholder="输入需求或点击麦克风说话..."></textarea>
             <button class="voice-btn" onclick="startVoiceInput()" style="position:absolute;bottom:15px;right:15px;padding:10px 14px;">🎤</button>
         </div>
-        
         <input type="text" id="apikey" placeholder="Groq API Key (gsk_ 开头)" />
-        
         <div>
             <button onclick="generate()">🚀 开始生成</button>
             <button onclick="shareLink()">🔗 分享链接</button>
             <button onclick="clearHistory()">清除历史</button>
         </div>
-
         <div id="output">生成结果会显示在这里...</div>
         <div id="history"></div>
     </div>
 </div>
 
 <script>
-// 主题
 function toggleTheme() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
@@ -73,12 +67,10 @@ if (localStorage.getItem('theme') === 'dark' || window.matchMedia('(prefers-colo
     document.documentElement.setAttribute('data-theme', 'dark');
 }
 
-// 自动保存 Prompt
 const promptEl = document.getElementById('prompt');
 promptEl.value = localStorage.getItem('lastPrompt') || '';
 promptEl.addEventListener('input', () => localStorage.setItem('lastPrompt', promptEl.value));
 
-// 历史记录
 let history = JSON.parse(localStorage.getItem('aiHistory')) || [];
 function saveHistory(prompt, result) {
     history.unshift({ prompt: prompt.substring(0, 60) + '...', result, time: new Date().toLocaleString() });
@@ -88,11 +80,7 @@ function saveHistory(prompt, result) {
 }
 function renderHistory() {
     const container = document.getElementById('history');
-    container.innerHTML = history.map((item, i) => `
-        <div onclick="loadHistory(${i})" style="padding:14px;background:#f8fafc;border-radius:10px;margin:8px 0;cursor:pointer;">
-            <small>${item.time}</small><br><strong>${item.prompt}</strong>
-        </div>
-    `).join('');
+    container.innerHTML = history.map((item, i) => `<div onclick="loadHistory(${i})" style="padding:14px;background:#f8fafc;border-radius:10px;margin:8px 0;cursor:pointer;"><small>${item.time}</small><br><strong>${item.prompt}</strong></div>`).join('');
 }
 function loadHistory(i) {
     document.getElementById('output').innerHTML = `<strong>历史记录：</strong><br><br>${history[i].result.replace(/\n/g, '<br>')}`;
@@ -105,7 +93,6 @@ function clearHistory() {
     }
 }
 
-// 语音输入
 function startVoiceInput() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("浏览器不支持语音输入");
@@ -115,7 +102,6 @@ function startVoiceInput() {
     recognition.start();
 }
 
-// 生成
 async function generate() {
     const model = document.getElementById('model').value;
     const prompt = document.getElementById('prompt').value.trim();
@@ -131,26 +117,12 @@ async function generate() {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                model: model,
-                messages: [{ role: "system", content: "你是一位专业的中文写作大师" }, { role: "user", content: prompt }],
-                temperature: 0.75
-            })
+            body: JSON.stringify({ model: model, messages: [{ role: "system", content: "专业中文写作大师" }, { role: "user", content: prompt }], temperature: 0.75 })
         });
-
         const data = await res.json();
         if (data.choices && data.choices[0]) {
             const result = data.choices[0].message.content;
-            output.innerHTML = `
-                <strong>✅ 生成完成</strong><br><br>
-                ${result.replace(/\n/g, '<br>')}
-                <div style="margin-top:20px;">
-                    <button onclick="copyText('${result.replace(/'/g,"\\'")}')">📋 复制</button>
-                    <button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'md')">📄 Markdown</button>
-                    <button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'txt')">📝 TXT</button>
-                    <button onclick="downloadWord('${result.replace(/'/g,"\\'")}')">📘 Word</button>
-                </div>
-            `;
+            output.innerHTML = `<strong>✅ 生成完成</strong><br><br>${result.replace(/\n/g, '<br>')}<div style="margin-top:20px;"><button onclick="copyText('${result.replace(/'/g,"\\'")}')">📋 复制</button><button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'md')">📄 Markdown</button><button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'txt')">📝 TXT</button><button onclick="downloadWord('${result.replace(/'/g,"\\'")}')">📘 Word</button></div>`;
             saveHistory(prompt, result);
         } else {
             output.innerHTML = "生成失败";
@@ -160,10 +132,7 @@ async function generate() {
     }
 }
 
-function copyText(text) {
-    navigator.clipboard.writeText(text).then(() => alert("✅ 已复制！"));
-}
-
+function copyText(text) { navigator.clipboard.writeText(text).then(() => alert("✅ 已复制！")); }
 function downloadFile(content, type) {
     const blob = new Blob([content], { type: type === 'md' ? 'text/markdown' : 'text/plain' });
     const a = document.createElement('a');
@@ -171,7 +140,6 @@ function downloadFile(content, type) {
     a.download = `AI写作.${type}`;
     a.click();
 }
-
 function downloadWord(content) {
     const html = `<html><head><meta charset="utf-8"><title>AI写作</title></head><body>${content.replace(/\n/g, '<br>')}</body></html>`;
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
@@ -180,17 +148,14 @@ function downloadWord(content) {
     a.download = 'AI写作结果.doc';
     a.click();
 }
-
 function shareLink() {
     const prompt = document.getElementById('prompt').value.trim();
     if (!prompt) return alert("请先输入内容");
-    const encoded = encodeURIComponent(prompt);
-    const url = `${window.location.origin}${window.location.pathname}?prompt=${encoded}`;
+    const url = `${window.location.origin}${window.location.pathname}?prompt=${encodeURIComponent(prompt)}`;
     navigator.clipboard.writeText(url);
     alert("分享链接已复制！");
 }
 
-// 初始化
 window.onload = () => {
     const params = new URLSearchParams(window.location.search);
     const shared = params.get('prompt');
