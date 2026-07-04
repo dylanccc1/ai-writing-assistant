@@ -58,6 +58,8 @@
 </div>
 
 <script>
+let historyData = JSON.parse(localStorage.getItem('aiHistory')) || [];
+
 function toggleTheme() {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     document.documentElement.setAttribute('data-theme', isDark ? 'light' : 'dark');
@@ -71,23 +73,26 @@ const promptEl = document.getElementById('prompt');
 promptEl.value = localStorage.getItem('lastPrompt') || '';
 promptEl.addEventListener('input', () => localStorage.setItem('lastPrompt', promptEl.value));
 
-let history = JSON.parse(localStorage.getItem('aiHistory')) || [];
 function saveHistory(prompt, result) {
-    history.unshift({ prompt: prompt.substring(0, 60) + '...', result, time: new Date().toLocaleString() });
-    if (history.length > 10) history.pop();
-    localStorage.setItem('aiHistory', JSON.stringify(history));
+    historyData.unshift({ prompt: prompt.substring(0, 60) + '...', result, time: new Date().toLocaleString() });
+    if (historyData.length > 10) historyData.pop();
+    localStorage.setItem('aiHistory', JSON.stringify(historyData));
     renderHistory();
 }
 function renderHistory() {
     const container = document.getElementById('history');
-    container.innerHTML = history.map((item, i) => `<div onclick="loadHistory(${i})" style="padding:14px;background:#f8fafc;border-radius:10px;margin:8px 0;cursor:pointer;"><small>${item.time}</small><br><strong>${item.prompt}</strong></div>`).join('');
+    container.innerHTML = historyData.map((item, i) => `
+        <div onclick="loadHistory(${i})" style="padding:14px;background:#f8fafc;border-radius:10px;margin:8px 0;cursor:pointer;">
+            <small>${item.time}</small><br><strong>${item.prompt}</strong>
+        </div>
+    `).join('');
 }
 function loadHistory(i) {
-    document.getElementById('output').innerHTML = `<strong>历史记录：</strong><br><br>${history[i].result.replace(/\n/g, '<br>')}`;
+    document.getElementById('output').innerHTML = `<strong>历史记录：</strong><br><br>${historyData[i].result.replace(/\n/g, '<br>')}`;
 }
 function clearHistory() {
-    if (confirm('确定清除？')) {
-        history = [];
+    if (confirm('确定清除所有历史？')) {
+        historyData = [];
         localStorage.removeItem('aiHistory');
         renderHistory();
     }
@@ -98,7 +103,7 @@ function startVoiceInput() {
     if (!SpeechRecognition) return alert("浏览器不支持语音输入");
     const recognition = new SpeechRecognition();
     recognition.lang = 'zh-CN';
-    recognition.onresult = (e) => document.getElementById('prompt').value += e.results[0][0].transcript;
+    recognition.onresult = (e) => document.getElementById('prompt').value += " " + e.results[0][0].transcript;
     recognition.start();
 }
 
@@ -117,12 +122,25 @@ async function generate() {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ model: model, messages: [{ role: "system", content: "专业中文写作大师" }, { role: "user", content: prompt }], temperature: 0.75 })
+            body: JSON.stringify({
+                model: model,
+                messages: [{ role: "system", content: "你是一位专业的中文写作大师" }, { role: "user", content: prompt }],
+                temperature: 0.75
+            })
         });
         const data = await res.json();
         if (data.choices && data.choices[0]) {
             const result = data.choices[0].message.content;
-            output.innerHTML = `<strong>✅ 生成完成</strong><br><br>${result.replace(/\n/g, '<br>')}<div style="margin-top:20px;"><button onclick="copyText('${result.replace(/'/g,"\\'")}')">📋 复制</button><button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'md')">📄 Markdown</button><button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'txt')">📝 TXT</button><button onclick="downloadWord('${result.replace(/'/g,"\\'")}')">📘 Word</button></div>`;
+            output.innerHTML = `
+                <strong>✅ 生成完成</strong><br><br>
+                ${result.replace(/\n/g, '<br>')}
+                <div style="margin-top:20px;">
+                    <button onclick="copyText('${result.replace(/'/g,"\\'")}')">📋 复制</button>
+                    <button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'md')">📄 Markdown</button>
+                    <button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'txt')">📝 TXT</button>
+                    <button onclick="downloadWord('${result.replace(/'/g,"\\'")}')">📘 Word</button>
+                </div>
+            `;
             saveHistory(prompt, result);
         } else {
             output.innerHTML = "生成失败";
@@ -132,7 +150,10 @@ async function generate() {
     }
 }
 
-function copyText(text) { navigator.clipboard.writeText(text).then(() => alert("✅ 已复制！")); }
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => alert("✅ 已复制！"));
+}
+
 function downloadFile(content, type) {
     const blob = new Blob([content], { type: type === 'md' ? 'text/markdown' : 'text/plain' });
     const a = document.createElement('a');
@@ -140,6 +161,7 @@ function downloadFile(content, type) {
     a.download = `AI写作.${type}`;
     a.click();
 }
+
 function downloadWord(content) {
     const html = `<html><head><meta charset="utf-8"><title>AI写作</title></head><body>${content.replace(/\n/g, '<br>')}</body></html>`;
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
@@ -148,6 +170,7 @@ function downloadWord(content) {
     a.download = 'AI写作结果.doc';
     a.click();
 }
+
 function shareLink() {
     const prompt = document.getElementById('prompt').value.trim();
     if (!prompt) return alert("请先输入内容");
