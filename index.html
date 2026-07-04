@@ -81,17 +81,13 @@ function saveHistory(prompt, result) {
 }
 function renderHistory() {
     const container = document.getElementById('history');
-    container.innerHTML = historyData.map((item, i) => `
-        <div onclick="loadHistory(${i})" style="padding:14px;background:#f8fafc;border-radius:10px;margin:8px 0;cursor:pointer;">
-            <small>${item.time}</small><br><strong>${item.prompt}</strong>
-        </div>
-    `).join('');
+    container.innerHTML = historyData.map((item, i) => `<div onclick="loadHistory(${i})" style="padding:14px;background:#f8fafc;border-radius:10px;margin:8px 0;cursor:pointer;"><small>${item.time}</small><br><strong>${item.prompt}</strong></div>`).join('');
 }
 function loadHistory(i) {
     document.getElementById('output').innerHTML = `<strong>历史记录：</strong><br><br>${historyData[i].result.replace(/\n/g, '<br>')}`;
 }
 function clearHistory() {
-    if (confirm('确定清除所有历史？')) {
+    if (confirm('确定清除？')) {
         historyData = [];
         localStorage.removeItem('aiHistory');
         renderHistory();
@@ -138,53 +134,4 @@ async function generate() {
                     <button onclick="copyText('${result.replace(/'/g,"\\'")}')">📋 复制</button>
                     <button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'md')">📄 Markdown</button>
                     <button onclick="downloadFile('${result.replace(/'/g,"\\'")}', 'txt')">📝 TXT</button>
-                    <button onclick="downloadWord('${result.replace(/'/g,"\\'")}')">📘 Word</button>
-                </div>
-            `;
-            saveHistory(prompt, result);
-        } else {
-            output.innerHTML = "生成失败";
-        }
-    } catch (e) {
-        output.innerHTML = "网络错误，请检查 Key";
-    }
-}
-
-function copyText(text) {
-    navigator.clipboard.writeText(text).then(() => alert("✅ 已复制！"));
-}
-
-function downloadFile(content, type) {
-    const blob = new Blob([content], { type: type === 'md' ? 'text/markdown' : 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `AI写作.${type}`;
-    a.click();
-}
-
-function downloadWord(content) {
-    const html = `<html><head><meta charset="utf-8"><title>AI写作</title></head><body>${content.replace(/\n/g, '<br>')}</body></html>`;
-    const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'AI写作结果.doc';
-    a.click();
-}
-
-function shareLink() {
-    const prompt = document.getElementById('prompt').value.trim();
-    if (!prompt) return alert("请先输入内容");
-    const url = `${window.location.origin}${window.location.pathname}?prompt=${encodeURIComponent(prompt)}`;
-    navigator.clipboard.writeText(url);
-    alert("分享链接已复制！");
-}
-
-window.onload = () => {
-    const params = new URLSearchParams(window.location.search);
-    const shared = params.get('prompt');
-    if (shared) document.getElementById('prompt').value = decodeURIComponent(shared);
-    renderHistory();
-};
-</script>
-</body>
-</html>
+                    <button onclick="downloadWord('${result.replace(/'/g,"\\'")}
