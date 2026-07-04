@@ -5,50 +5,123 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI 写作助手 Pro</title>
     <style>
-        body { font-family: "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; background: linear-gradient(135deg, #f5f7fa, #c3cfe2); }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #1e3a8a; }
-        select, textarea, input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        button { background: #2563eb; color: white; padding: 14px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 5px; }
-        button:hover { background: #1d4ed8; }
-        #output { margin-top: 20px; padding: 20px; background: #f8fafc; border-radius: 12px; line-height: 1.7; min-height: 200px; position: relative; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; background: #64748b; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+            color: white;
+            padding: 35px 30px;
+            text-align: center;
+        }
+        .header h1 { margin: 0; font-size: 28px; }
+        .header p { margin: 8px 0 0; opacity: 0.9; }
+        .main { padding: 35px; }
+        select, textarea, input {
+            width: 100%;
+            padding: 14px 16px;
+            margin: 12px 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        select:focus, textarea:focus, input:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        button:hover { 
+            background: #1d4ed8; 
+            transform: translateY(-2px);
+        }
+        #output {
+            margin-top: 25px;
+            padding: 25px;
+            background: #f8fafc;
+            border-radius: 16px;
+            line-height: 1.8;
+            font-size: 16.5px;
+            position: relative;
+            min-height: 180px;
+            border: 1px solid #e2e8f0;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #475569;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .copy-btn:hover { background: #334155; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>✍️ AI 写作助手 Pro</h1>
-    <p style="text-align:center;">输入需求，AI 帮你高效写作</p>
+    <div class="header">
+        <h1>✍️ AI 写作助手 Pro</h1>
+        <p>Groq 免费高速 · 专业中文写作</p>
+    </div>
+    <div class="main">
+        <select id="model">
+            <option value="llama-3.3-70b-versatile">Llama 3.3 70B（推荐·平衡）</option>
+            <option value="mixtral-8x7b-32768">Mixtral 8x7B（逻辑强）</option>
+            <option value="gemma2-9b-it">Gemma 2 9B（中文优秀）</option>
+        </select>
 
-    <select id="model">
-        <option value="llama-3.3-70b-versatile">Llama 3.3 70B (推荐)</option>
-        <option value="mixtral-8x7b-32768">Mixtral 8x7B (逻辑强)</option>
-        <option value="gemma2-9b-it">Gemma 2 9B (中文好)</option>
-    </select>
+        <select id="mode">
+            <option value="article">📝 生成完整文章</option>
+            <option value="title">🏷️ 生成吸睛标题</option>
+            <option value="outline">📋 生成详细大纲</option>
+            <option value="rewrite">✍️ 改写润色</option>
+            <option value="continue">🔄 续写内容</option>
+        </select>
 
-    <select id="mode">
-        <option value="article">📝 生成文章</option>
-        <option value="title">🏷️ 生成标题</option>
-        <option value="outline">📋 生成大纲</option>
-        <option value="rewrite">✍️ 改写润色</option>
-        <option value="continue">🔄 续写</option>
-    </select>
-
-    <textarea id="prompt" rows="5" placeholder="请输入写作需求，例如：写一篇关于普通人如何通过AI变现的实用文章..."></textarea>
-    
-    <input type="text" id="apikey" placeholder="粘贴 Groq API Key (gsk_ 开头)" />
-    
-    <button onclick="generate()">🚀 开始生成</button>
-    
-    <div id="output">
-        生成结果将显示在这里...
+        <textarea id="prompt" rows="6" placeholder="在这里输入你的写作需求，例如：写一篇普通人如何通过AI实现变现的实用指南..."></textarea>
+        
+        <input type="text" id="apikey" placeholder="粘贴 Groq API Key（以 gsk_ 开头）" />
+        
+        <button onclick="generate()">🚀 开始生成</button>
+        
+        <div id="output">生成结果会在这里显示...</div>
     </div>
 </div>
 
 <script>
 async function generate() {
     const model = document.getElementById('model').value;
-    const mode = document.getElementById('mode').value;
     const userPrompt = document.getElementById('prompt').value.trim();
     const apiKey = document.getElementById('apikey').value.trim();
     const output = document.getElementById('output');
@@ -56,9 +129,7 @@ async function generate() {
     if (!userPrompt) return alert("请输入写作需求！");
     if (!apiKey || !apiKey.startsWith('gsk_')) return alert("请输入正确的 Groq API Key！");
 
-    output.innerHTML = "🤔 AI 正在认真写作中，请稍等...";
-
-    let systemPrompt = "你是一位专业的中文写作大师，文笔优美、结构严谨、内容实用且富有洞见。请根据用户需求高质量完成写作任务。";
+    output.innerHTML = "🤔 AI 正在认真创作中，请稍等...";
 
     try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -70,7 +141,7 @@ async function generate() {
             body: JSON.stringify({
                 model: model,
                 messages: [
-                    { role: "system", content: systemPrompt },
+                    { role: "system", content: "你是一位专业的中文写作大师，文笔流畅优美、结构清晰、内容实用且有深度。请根据用户需求高质量完成写作。" },
                     { role: "user", content: userPrompt }
                 ],
                 temperature: 0.75,
@@ -85,19 +156,21 @@ async function generate() {
             output.innerHTML = `
                 <strong>✅ 生成结果：</strong><br><br>
                 ${result.replace(/\n/g, '<br>')}
-                <button class="copy-btn" onclick="copyToClipboard('${result.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')">📋 复制</button>
+                <button class="copy-btn" onclick="copyResult('${result.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')">📋 复制全文</button>
             `;
         } else {
             output.innerHTML = "生成失败：" + (data.error ? data.error.message : "未知错误");
         }
     } catch (e) {
-        output.innerHTML = "❌ 生成失败，请检查网络和 API Key。<br>" + e.message;
+        output.innerHTML = "❌ 生成失败，请检查网络和 API Key 是否正确。<br>" + e.message;
     }
 }
 
-function copyToClipboard(text) {
+function copyResult(text) {
     navigator.clipboard.writeText(text).then(() => {
-        alert("✅ 已复制到剪贴板！");
+        alert("✅ 内容已复制到剪贴板！");
+    }).catch(() => {
+        alert("复制失败，请手动复制");
     });
 }
 </script>
